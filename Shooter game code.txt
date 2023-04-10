@@ -1,0 +1,85 @@
+from microbit import *
+import random
+
+# Set the initial position of the player
+x = 2
+y = 4
+
+# set up initial enemy position
+enemy_x = random.randint(0, 4)
+enemy_y = 0
+
+# Set the initial state of the bullet
+bullet_x = -1
+bullet_y = -1
+
+# Set the initial score
+score = 0
+miss = 0
+
+# Set the initial time
+start_time = running_time()
+
+def spawn_enemy():
+    global enemy_x, enemy_y
+    enemy_x = random.randint(0, 4)
+    enemy_y = 0
+
+while True:
+    # Clear the LED matrix
+    display.clear()
+
+    # Turn on the player at the current position
+    display.set_pixel(x, y, 9)
+
+    # draw enemy at current position
+    display.set_pixel(enemy_x, enemy_y, 9)
+
+    # Turn on the bullet at the current position, if it exists
+    if bullet_x >= 0 and bullet_y >= 0:
+        display.set_pixel(bullet_x, bullet_y, 5)
+
+        # Move the bullet up
+        bullet_y -= 1
+
+        # Check if the bullet has hit the top edge or enemy
+        if bullet_y < 0:
+            bullet_x = -1
+            bullet_y = -1
+            miss += 1
+        elif bullet_x == enemy_x and bullet_y == enemy_y:
+            score += 1
+            spawn_enemy()
+            bullet_x = -1
+            bullet_y = -1
+
+    # Read the accelerometer values for the x-axis and y-axis
+    x_accel = accelerometer.get_x()
+
+    # Map the accelerometer values to the range of player coordinates
+    x_range = 5  # the range of x-axis coordinates
+    x = int((x_accel + 1024) / (2048 / x_range))
+
+    # Check for button A press
+    if button_a.was_pressed() and bullet_x == -1 and bullet_y == -1:
+        bullet_x = x
+        bullet_y = y - 1
+
+    # Delay for a short amount of time to control the speed of the animation
+    sleep(150)
+
+    # If missed three times then Game Over
+    if miss >= 4:
+        display.show(Image.CHESSBOARD)
+        sleep(800)
+        display.scroll('GAME OVER', delay=75)
+        display.scroll(str(score), delay=75)
+    
+    # If score reaches 4
+    if score == 4:
+        display.show(Image.HAPPY)
+        sleep(800)
+        display.scroll('CONGRATS', delay=75)
+        display.scroll('SCORE', delay=75)
+        display.scroll(str(score), delay=75)
+        break
